@@ -16,7 +16,7 @@ int sensor3_pin = 17;
 
 void setup() 
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Wire.begin();
   pinMode(sensor1_pin,OUTPUT);
   pinMode(sensor2_pin,OUTPUT);
@@ -52,35 +52,35 @@ void setup()
 
   delay(1000);
 
-  //////////////////////I2C scanner////////////
-  Serial.begin (115200); // Start Serial Communication at baud rate 115200
-  while (!Serial)  
-    {
-    }
- 
-  Serial.println ();
-  Serial.println ("I2C Address Scanner. Scanning ...");
-  byte count = 0;
-  
-  Wire.begin();
-  for (byte i = 8; i < 120; i++)
-  {
-    Wire.beginTransmission (i);
-    if (Wire.endTransmission () == 0)
-      {
-      Serial.print ("Found i2c Device Address: ");
-      Serial.print (i, DEC);
-      Serial.print (" (0x");
-      Serial.print (i, HEX);
-      Serial.println (")");
-      count++;
-      delay (1);  
-      } // end of good response
-  } // end of for loop
-  Serial.println ("Done.");
-  Serial.print ("Found ");
-  Serial.print (count, DEC);
-  Serial.println (" device(s).");
+// //////////////////////I2C scanner/////////////////////
+//  Serial.begin (115200); // Start Serial Communication at baud rate 115200
+//  while (!Serial)  
+//    {
+//    }
+// 
+//  Serial.println ();
+//  Serial.println ("I2C Address Scanner. Scanning ...");
+//  byte count = 0;
+//  
+//  Wire.begin();
+//  for (byte i = 8; i < 120; i++)
+//  {
+//    Wire.beginTransmission (i);
+//    if (Wire.endTransmission () == 0)
+//      {
+//      Serial.print ("Found i2c Device Address: ");
+//      Serial.print (i, DEC);
+//      Serial.print (" (0x");
+//      Serial.print (i, HEX);
+//      Serial.println (")");
+//      count++;
+//      delay (1);  
+//      } // end of good response
+//  } // end of for loop
+//  Serial.println ("Done.");
+//  Serial.print ("Found ");
+//  Serial.print (count, DEC);
+//  Serial.println (" device(s).");
 }
 
 int dist_1 = 0;
@@ -90,21 +90,26 @@ int dist_3 = 0;
 void loop() 
 { 
   
-  dist_1 = sensor1.readRangeSingleMillimeters();
-  //delay(20);
-  dist_2 = sensor2.readRangeSingleMillimeters();
-  //delay(20);
-  dist_3 = sensor3.readRangeSingleMillimeters();
-  //delay(20);
+//  dist_1 = sensor1.readRangeSingleMillimeters();
+//
+//  dist_2 = sensor2.readRangeSingleMillimeters();
+//  
+//  dist_3 = sensor3.readRangeSingleMillimeters();
+  
   
   Serial.print("Sensor 1: ");
-  Serial.print(dist_1);
+  Serial.print(sensor1.readRangeSingleMillimeters());
+  delay(20);
   Serial.print("\t");
+  
   Serial.print("Sensor 2: ");
-  Serial.print(dist_2);
+  Serial.print(sensor2.readRangeSingleMillimeters());
+  delay(20);
   Serial.print("\t");
+  
   Serial.print("Sensor 3: ");
-  Serial.print(dist_3);
+  Serial.print(sensor3.readRangeSingleMillimeters());
+  delay(20);
 
   Serial.println();
 }
