@@ -67,11 +67,11 @@ void loop() {
   Serial.print("\t");
   Serial.print(temp.gyrZ);
   Serial.print("\t");
-  Serial.print(laserLeft);
+  Serial.print(temp.laserLeft);
   Serial.print("\t");
-  Serial.print(laserFront);
+  Serial.print(temp.laserFront);
   Serial.print("\t");
-  Serial.print(laserRight);
+  Serial.print(temp.laserRight);
   Serial.print("\n");
 }
 
