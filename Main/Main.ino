@@ -1,6 +1,9 @@
 #include <Wire.h>
 #include <VL6180X.h>
+#include "I2Cdev.h"
+#include "MPU6050.h"
 
+//laser vars//
 VL6180X sensor1;
 VL6180X sensor2;
 VL6180X sensor3;
@@ -8,18 +11,25 @@ VL6180X sensor3;
 int sensor1_pin = 15;
 int sensor2_pin = 16;
 int sensor3_pin = 17;
+//End
 
+//Motor Vars
 int pinI1 = 12;  //define IN1 interface
 int pinI2 = 13; //define IN2 interface 
 int speedpinA = 14;  //enable motor A
 int pinI3 = 25; //define IN3 interface 
 int pinI4 = 26; //define IN4 interface 
 int speedpinB = 27; //enable motor B
+//end
+
+//Accel vars
+MPU6050 accelgyro;
+//end
 
 struct ScanData
 {
   int laserLeft;
-  int laserForward;
+  int laserFront;
   int laserRight;
   int accX, accY, accZ, gyrX, gyrY, gyrZ;
 };
@@ -27,7 +37,11 @@ struct ScanData
 
 void setup() {
   // put your setup code here, to run once:
+  Serial.begin(115200);
+  Wire.begin();
   MoveInit();
+  LaserInit();
+  accelgyro.initialize();
 }
 
 void loop() {
@@ -74,8 +88,6 @@ void MoveInit()
 
 void LaserInit()
 {
-  Serial.begin(115200);
-  Wire.begin();
   pinMode(sensor1_pin,OUTPUT);
   pinMode(sensor2_pin,OUTPUT);
   pinMode(sensor3_pin,OUTPUT);
@@ -109,7 +121,6 @@ void LaserInit()
   sensor3.setAddress(0x34);
 
   delay(1000);
-
 }
 
 //MotorA is left, MotorB is right
@@ -148,8 +159,25 @@ void Move(int motorA, int motorB)
   }
 }
 
-void Scan()
+ScanData Scan()
 {
-  
+  int16_t ax, ay, az;
+  int16_t gx, gy, gz;
+  ScanData returnData;
+  accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  returnData.accX = ax;
+  returnData.accY = ay;
+  returnData.accZ = az;
+  returnData.gyrX = gx;
+  returnData.gyrY = gy;
+  returnData.gyrZ = gz;
+
+  returnData.laserRight = sensor1.readRangeSingleMillimeters();
+  delay(20);
+  returnData.laserFront = sensor2.readRangeSingleMillimeters();
+  delay(20);
+  returnData.laserLeft = sensor3.readRangeSingleMillimeters();
+
+  return returnData;
 }
 
