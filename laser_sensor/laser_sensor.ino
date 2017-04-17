@@ -16,7 +16,7 @@ int sensor3_pin = 17;
 
 void setup() 
 {
-  Serial.begin(115200);
+  Serial.begin(230400/);
   Wire.begin();
   pinMode(sensor1_pin,OUTPUT);
   pinMode(sensor2_pin,OUTPUT);

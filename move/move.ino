@@ -7,7 +7,7 @@
  
 void right()
 {
-     digitalWrite(pinI4,HIGH);//turn DC Motor B move clockwisen
+     digitalWrite(pinI4,HIGH);
      digitalWrite(pinI3,LOW);
      digitalWrite(pinI2,LOW);//turn DC Motor A move anticlockwise
      digitalWrite(pinI1,HIGH);
@@ -50,10 +50,13 @@ void loop()
 {
 //  left();
 //  delay(2000);
-  right();
-  delay(2000);
+//  right();
+//  delay(2000);
 //  forward();
 //  delay(2000);
 //  backward();
 //  delay(2000); 
+
+     digitalWrite(pinI2,HIGH);//turn DC Motor B move clockwise
+     digitalWrite(pinI1,LOW);
 }

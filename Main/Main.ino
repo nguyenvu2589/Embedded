@@ -5,13 +5,13 @@
 #define pinI4     26 //define IN4 interface 
 #define speedpinB 27 //enable motor B
 
-struct ScanData
-{
-  public int laserLeft;
-  public int laserForward;
-  public int laserRight;
-  public int accX, accY, accZ, gyrX, gyrY, gyrZ;
-};
+//struct ScanData
+//{
+//  public int laserLeft;
+//  public int laserForward;
+//  public int laserRight;
+//  //public int accX, accY, accZ, gyrX, gyrY, gyrZ;
+//};
 
 
 void setup() {
@@ -31,7 +31,7 @@ void loop() {
   delay(2000);
 }
 
-public void MoveDir(int dir)
+void MoveDir(int dir)
 {
   switch (dir)
   {
@@ -49,7 +49,7 @@ public void MoveDir(int dir)
   }
 }
 
-private void MoveInit()
+void MoveInit()
 {
   digitalWrite(speedpinA,HIGH);//input a simulation value to set the speed
   digitalWrite(speedpinB,HIGH);
@@ -63,7 +63,7 @@ private void MoveInit()
 
 //MotorA is left, MotorB is right
 //1 = forward, 0 = stopped, -1 = reverse
-private void Move(int motorA, int motorB)
+void Move(int motorA, int motorB)
 {
   if(motorA == -1)
   {//CLockwise
@@ -97,7 +97,7 @@ private void Move(int motorA, int motorB)
   }
 }
 
-public void Scan()
+void Scan()
 {
   
 }
