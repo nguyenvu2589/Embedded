@@ -46,6 +46,7 @@ struct ScanData
   int accX, accY, accZ, gyrX, gyrY, gyrZ;
 };
 
+ScanData data;
 
 void setup() {
   // put your setup code here, to run once:
@@ -66,37 +67,37 @@ void loop() {
 //  delay(2000);
 //  MoveDir(3);
 //  delay(2000);
-  Serial.print("Start Scan");
-  ScanData temp = Scan();
-  Serial.print(temp.accX);
-  Serial.print("\t");
-  Serial.print(temp.accY);
-  Serial.print("\t");
-  Serial.print(temp.accZ);
-  Serial.print("\t");
-  Serial.print(temp.gyrX);
-  Serial.print("\t");
-  Serial.print(temp.gyrY);
-  Serial.print("\t");
-  Serial.print(temp.gyrZ);
-  Serial.print("\t");
-  Serial.print(temp.laserLeft);
-  Serial.print("\t");
-  Serial.print(temp.laserFront);
-  Serial.print("\t");
-  Serial.print(temp.laserRight);
-  Serial.print("\n");
+//  Serial.print("Start Scan");
+  data = Scan(data);
+//  Serial.print(data.accX);
+//  Serial.print("\t");
+//  Serial.print(data.accY);
+//  Serial.print("\t");
+//  Serial.print(data.accZ);
+//  Serial.print("\t");
+//  Serial.print(data.gyrX);
+//  Serial.print("\t");
+//  Serial.print(data.gyrY);
+//  Serial.print("\t");
+//  Serial.print(data.gyrZ);
+//  Serial.print("\t");
+//  Serial.print(data.laserLeft);
+//  Serial.print("\t");
+//  Serial.print(data.laserFront);
+//  Serial.print("\t");
+//  Serial.print(data.laserRight);
+//  Serial.print("\n");
 
   MoveDir(FORWARD);
-  if(temp.laserFront < laserActionThreshhold)
+  if(data.laserFront < laserActionThreshhold)
   {
     MoveDir(STOP);
     delay(1000);
     MoveDir(RIGHT);
-    delay(1000);
+    delay(700);
   }
-  CheckSide(LEFT, temp.laserLeft);
-  CheckSide(RIGHT, temp.laserRight);
+  CheckSide(LEFT, data.laserLeft);
+  CheckSide(RIGHT, data.laserRight);
 }
 
 void MoveDir(int dir)
@@ -187,6 +188,7 @@ void LaserInit()
   delay(50);
   sensor1.init();
   sensor1.configureDefault();
+  sensor1.setScaling(2);
   sensor1.setTimeout(500);
   sensor1.setAddress(0x30);
   
@@ -195,6 +197,7 @@ void LaserInit()
   delay(50);
   sensor2.init();
   sensor2.configureDefault();
+  sensor2.setScaling(2);
   sensor2.setTimeout(500);
   sensor2.setAddress(0x32);
 
@@ -203,15 +206,15 @@ void LaserInit()
   delay(50);
   sensor3.init();
   sensor3.configureDefault();
+  sensor3.setScaling(2);
   sensor3.setTimeout(500);
   sensor3.setAddress(0x34);
 
   delay(1000);
 }
 
-ScanData Scan()
+ScanData Scan(ScanData data)
 {
-  ScanData returnData;
 //  accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 //  returnData.accX = ax;
 //  returnData.accY = ay;
@@ -220,13 +223,13 @@ ScanData Scan()
 //  returnData.gyrY = gy;
 //  returnData.gyrZ = gz;
 
-  returnData.laserRight = sensor1.readRangeSingleMillimeters();
+  data.laserRight = sensor1.readRangeSingleMillimeters();
   delay(20);
-  returnData.laserFront = sensor2.readRangeSingleMillimeters();
+  data.laserFront = sensor2.readRangeSingleMillimeters();
   delay(20);
-  returnData.laserLeft = sensor3.readRangeSingleMillimeters();
+  data.laserLeft = sensor3.readRangeSingleMillimeters();
 
-  return returnData;
+  return data;
 }
 
 bool CheckSide(int side, int dist)
