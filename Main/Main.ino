@@ -1,17 +1,28 @@
-#define pinI1     12  //define IN1 interface
-#define pinI2     13 //define IN2 interface 
-#define speedpinA 14  //enable motor A
-#define pinI3     25 //define IN3 interface 
-#define pinI4     26 //define IN4 interface 
-#define speedpinB 27 //enable motor B
+#include <Wire.h>
+#include <VL6180X.h>
 
-//struct ScanData
-//{
-//  public int laserLeft;
-//  public int laserForward;
-//  public int laserRight;
-//  //public int accX, accY, accZ, gyrX, gyrY, gyrZ;
-//};
+VL6180X sensor1;
+VL6180X sensor2;
+VL6180X sensor3;
+
+int sensor1_pin = 15;
+int sensor2_pin = 16;
+int sensor3_pin = 17;
+
+int pinI1 = 12;  //define IN1 interface
+int pinI2 = 13; //define IN2 interface 
+int speedpinA = 14;  //enable motor A
+int pinI3 = 25; //define IN3 interface 
+int pinI4 = 26; //define IN4 interface 
+int speedpinB = 27; //enable motor B
+
+struct ScanData
+{
+  int laserLeft;
+  int laserForward;
+  int laserRight;
+  int accX, accY, accZ, gyrX, gyrY, gyrZ;
+};
 
 
 void setup() {
@@ -59,6 +70,46 @@ void MoveInit()
   pinMode(pinI3,OUTPUT);
   pinMode(pinI4,OUTPUT);
   pinMode(speedpinB,OUTPUT);
+}
+
+void LaserInit()
+{
+  Serial.begin(115200);
+  Wire.begin();
+  pinMode(sensor1_pin,OUTPUT);
+  pinMode(sensor2_pin,OUTPUT);
+  pinMode(sensor3_pin,OUTPUT);
+
+  digitalWrite(sensor1_pin, LOW);
+  digitalWrite(sensor2_pin, LOW);
+  digitalWrite(sensor3_pin, LOW);
+
+  //Sensor 1
+  digitalWrite(sensor1_pin, HIGH);
+  delay(50);
+  sensor1.init();
+  sensor1.configureDefault();
+  sensor1.setTimeout(500);
+  sensor1.setAddress(0x30);
+  
+  //Sensor 2
+  digitalWrite(sensor2_pin, HIGH);
+  delay(50);
+  sensor2.init();
+  sensor2.configureDefault();
+  sensor2.setTimeout(500);
+  sensor2.setAddress(0x32);
+
+  //Sensor 3
+  digitalWrite(sensor3_pin, HIGH);
+  delay(50);
+  sensor3.init();
+  sensor3.configureDefault();
+  sensor3.setTimeout(500);
+  sensor3.setAddress(0x34);
+
+  delay(1000);
+
 }
 
 //MotorA is left, MotorB is right
