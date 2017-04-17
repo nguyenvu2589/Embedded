@@ -11,6 +11,8 @@ VL6180X sensor3;
 int sensor1_pin = 15;
 int sensor2_pin = 16;
 int sensor3_pin = 17;
+
+int laserActionThreshhold = 150;
 //End
 
 //Motor Vars
@@ -25,6 +27,14 @@ int speedpinB = 27; //enable motor B
 //Accel vars
 MPU6050 accelgyro;
 //end
+
+//Consts
+#define LEFT        0
+#define RIGHT       2
+#define FORWARD     1
+#define STOP        3
+#define STRAFERIGHT 5
+#define STRAFELEFT  4
 
 struct ScanData
 {
@@ -79,17 +89,60 @@ void MoveDir(int dir)
 {
   switch (dir)
   {
-    case 0://left
+    case 0://hard left
       Move(-1,1);
-    break;
+      break;
     case 1://forward
       Move(1,1);
-    break;
-    case 2://right
+      break;
+    case 2://hard right
       Move(1,-1);
-    break;
+      break;
     case 3://stop
       Move(0,0);
+      break;
+    case 4://strafe left
+      Move(0,1);
+      break;
+    case 5://strafe right
+      Move(1,0);
+      break;
+  }
+}
+
+//MotorA is left, MotorB is right
+//1 = forward, 0 = stopped, -1 = reverse
+void Move(int motorA, int motorB)
+{
+  if(motorA == -1)
+  {//CLockwise
+    digitalWrite(pinI4,HIGH);
+    digitalWrite(pinI3,LOW);
+  }
+  else if(motorA == 0)
+  {//No Movement
+    digitalWrite(pinI4,LOW);//turn DC Motor B move clockwise
+    digitalWrite(pinI3,LOW);
+  }
+  else
+  {//Counter/AntiClockwise
+    digitalWrite(pinI3,HIGH);//turn DC Motor B move clockwise
+    digitalWrite(pinI4,LOW);
+  }
+  if(motorB == -1)
+  {//COunter/AntiClockwise
+    digitalWrite(pinI1,LOW);//turn DC Motor A move clockwise
+    digitalWrite(pinI2,HIGH);
+  }
+  else if(motorB == 0)
+  {//Not moving
+    digitalWrite(pinI2,LOW);//turn DC Motor A move clockwise
+    digitalWrite(pinI1,LOW);
+  }
+  else
+  {//CLockwise
+    digitalWrite(pinI2,LOW);//turn DC Motor A move clockwise
+    digitalWrite(pinI1,HIGH);
   }
 }
 
@@ -142,42 +195,6 @@ void LaserInit()
   delay(1000);
 }
 
-//MotorA is left, MotorB is right
-//1 = forward, 0 = stopped, -1 = reverse
-void Move(int motorA, int motorB)
-{
-  if(motorA == -1)
-  {//CLockwise
-    digitalWrite(pinI4,HIGH);
-    digitalWrite(pinI3,LOW);
-  }
-  else if(motorA == 0)
-  {//No Movement
-    digitalWrite(pinI4,LOW);//turn DC Motor B move clockwise
-    digitalWrite(pinI3,LOW);
-  }
-  else
-  {//Counter/AntiClockwise
-    digitalWrite(pinI3,HIGH);//turn DC Motor B move clockwise
-    digitalWrite(pinI4,LOW);
-  }
-  if(motorB == -1)
-  {//COunter/AntiClockwise
-    digitalWrite(pinI1,LOW);//turn DC Motor A move clockwise
-    digitalWrite(pinI2,HIGH);
-  }
-  else if(motorB == 0)
-  {//Not moving
-    digitalWrite(pinI2,LOW);//turn DC Motor A move clockwise
-    digitalWrite(pinI1,LOW);
-  }
-  else
-  {//CLockwise
-    digitalWrite(pinI2,LOW);//turn DC Motor A move clockwise
-    digitalWrite(pinI1,HIGH);
-  }
-}
-
 ScanData Scan()
 {
   int16_t ax, ay, az;
@@ -198,5 +215,27 @@ ScanData Scan()
   returnData.laserLeft = sensor3.readRangeSingleMillimeters();
 
   return returnData;
+}
+
+bool CheckSide(int side, int dist)
+{
+  if(side == 0)
+  {//left
+    if(dist < laserActionThreshhold)
+    {
+      MoveDir(STRAFERIGHT);
+      delay(100);
+      MoveDir(FORWARD);
+    }
+  }
+  else
+  {//right
+    if(dist < laserActionThreshhold)
+    {
+      MoveDir(STRAFELEFT);
+      delay(100);
+      MoveDir(FORWARD);
+    }
+  }
 }
 
