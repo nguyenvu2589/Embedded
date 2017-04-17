@@ -26,6 +26,8 @@ int speedpinB = 27; //enable motor B
 
 //Accel vars
 MPU6050 accelgyro;
+int16_t ax, ay, az;
+int16_t gx, gy, gz;
 //end
 
 //Consts
@@ -64,6 +66,7 @@ void loop() {
 //  delay(2000);
 //  MoveDir(3);
 //  delay(2000);
+  Serial.print("Start Scan");
   ScanData temp = Scan();
   Serial.print(temp.accX);
   Serial.print("\t");
@@ -83,28 +86,39 @@ void loop() {
   Serial.print("\t");
   Serial.print(temp.laserRight);
   Serial.print("\n");
+
+  MoveDir(FORWARD);
+  if(temp.laserFront < laserActionThreshhold)
+  {
+    MoveDir(STOP);
+    delay(1000);
+    MoveDir(RIGHT);
+    delay(1000);
+  }
+  CheckSide(LEFT, temp.laserLeft);
+  CheckSide(RIGHT, temp.laserRight);
 }
 
 void MoveDir(int dir)
 {
   switch (dir)
   {
-    case 0://hard left
+    case LEFT://hard left
       Move(-1,1);
       break;
-    case 1://forward
+    case FORWARD://forward
       Move(1,1);
       break;
-    case 2://hard right
+    case RIGHT://hard right
       Move(1,-1);
       break;
-    case 3://stop
+    case STOP://stop
       Move(0,0);
       break;
-    case 4://strafe left
+    case STRAFELEFT://strafe left
       Move(0,1);
       break;
-    case 5://strafe right
+    case STRAFERIGHT://strafe right
       Move(1,0);
       break;
   }
@@ -197,16 +211,14 @@ void LaserInit()
 
 ScanData Scan()
 {
-  int16_t ax, ay, az;
-  int16_t gx, gy, gz;
   ScanData returnData;
-  accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-  returnData.accX = ax;
-  returnData.accY = ay;
-  returnData.accZ = az;
-  returnData.gyrX = gx;
-  returnData.gyrY = gy;
-  returnData.gyrZ = gz;
+//  accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+//  returnData.accX = ax;
+//  returnData.accY = ay;
+//  returnData.accZ = az;
+//  returnData.gyrX = gx;
+//  returnData.gyrY = gy;
+//  returnData.gyrZ = gz;
 
   returnData.laserRight = sensor1.readRangeSingleMillimeters();
   delay(20);
@@ -219,12 +231,12 @@ ScanData Scan()
 
 bool CheckSide(int side, int dist)
 {
-  if(side == 0)
+  if(side == LEFT)
   {//left
     if(dist < laserActionThreshhold)
     {
       MoveDir(STRAFERIGHT);
-      delay(100);
+      delay(50);
       MoveDir(FORWARD);
     }
   }
@@ -233,7 +245,7 @@ bool CheckSide(int side, int dist)
     if(dist < laserActionThreshhold)
     {
       MoveDir(STRAFELEFT);
-      delay(100);
+      delay(50);
       MoveDir(FORWARD);
     }
   }
