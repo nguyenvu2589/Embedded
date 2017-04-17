@@ -46,14 +46,33 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  MoveDir(0);
-  delay(2000);
-  MoveDir(1);
-  delay(2000);
-  MoveDir(2);
-  delay(2000);
-  MoveDir(3);
-  delay(2000);
+//  MoveDir(0);
+//  delay(2000);
+//  MoveDir(1);
+//  delay(2000);
+//  MoveDir(2);
+//  delay(2000);
+//  MoveDir(3);
+//  delay(2000);
+  ScanData temp = Scan();
+  Serial.print(temp.accX);
+  Serial.print("\t");
+  Serial.print(temp.accY);
+  Serial.print("\t");
+  Serial.print(temp.accZ);
+  Serial.print("\t");
+  Serial.print(temp.gyrX);
+  Serial.print("\t");
+  Serial.print(temp.gyrY);
+  Serial.print("\t");
+  Serial.print(temp.gyrZ);
+  Serial.print("\t");
+  Serial.print(laserLeft);
+  Serial.print("\t");
+  Serial.print(laserFront);
+  Serial.print("\t");
+  Serial.print(laserRight);
+  Serial.print("\n");
 }
 
 void MoveDir(int dir)
