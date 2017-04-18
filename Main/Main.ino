@@ -26,8 +26,12 @@ int speedpinB = 27; //enable motor B
 
 //Accel vars
 MPU6050 accelgyro;
-int16_t ax, ay, az;
 int16_t gx, gy, gz;
+unsigned long prev_time = 0;
+unsigned long current_time = 0;
+float time_step = 0.0;
+float angle_change = 0;
+float total_angle_change = 0;
 //end
 
 //Consts
@@ -43,7 +47,6 @@ struct ScanData
   int laserLeft;
   int laserFront;
   int laserRight;
-  int accX, accY, accZ, gyrX, gyrY, gyrZ;
 };
 
 ScanData data;
@@ -58,23 +61,9 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-//  MoveDir(0);
-//  delay(2000);
-//  MoveDir(1);
-//  delay(2000);
-//  MoveDir(2);
-//  delay(2000);
-//  MoveDir(3);
-//  delay(2000);
-//  Serial.print("Start Scan");
   data = Scan(data);
-//  Serial.print(data.accX);
-//  Serial.print("\t");
-//  Serial.print(data.accY);
-//  Serial.print("\t");
-//  Serial.print(data.accZ);
-//  Serial.print("\t");
+//////////////////Data scan Debuger////////////////
+//  Serial.print("Start Scan");
 //  Serial.print(data.gyrX);
 //  Serial.print("\t");
 //  Serial.print(data.gyrY);
@@ -93,8 +82,7 @@ void loop() {
   {
     MoveDir(STOP);
     delay(1000);
-    MoveDir(RIGHT);
-    delay(700);
+    turn(180, RIGHT); //turn around 180 degree
   }
   CheckSide(LEFT, data.laserLeft);
   CheckSide(RIGHT, data.laserRight);
@@ -215,14 +203,6 @@ void LaserInit()
 
 ScanData Scan(ScanData data)
 {
-//  accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-//  returnData.accX = ax;
-//  returnData.accY = ay;
-//  returnData.accZ = az;
-//  returnData.gyrX = gx;
-//  returnData.gyrY = gy;
-//  returnData.gyrZ = gz;
-
   data.laserRight = sensor1.readRangeSingleMillimeters();
   delay(20);
   data.laserFront = sensor2.readRangeSingleMillimeters();
@@ -251,6 +231,24 @@ bool CheckSide(int side, int dist)
       delay(50);
       MoveDir(FORWARD);
     }
+  }
+}
+
+void turn(int angle, int dir)
+{
+  total_angle_change = 0;
+  while(total_angle_change < angle){
+    MoveDir(dir);
+    current_time = millis();
+    time_step = (current_time - prev_time) / 1000.0;
+    prev_time = current_time;
+
+    accelgyro.getRotation(&gx, &gy, &gz);
+    gz = gz/131;   //131 is a gyro scale based on datasheet
+    
+    angle_change = abs(gz * time_step);
+    total_angle_change += angle_change;
+    MoveDir(STOP);
   }
 }
 
