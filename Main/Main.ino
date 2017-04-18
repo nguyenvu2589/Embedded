@@ -26,7 +26,7 @@ int speedpinB = 27; //enable motor B
 
 //Accel vars
 MPU6050 accelgyro;
-int16_t gx, gy, gz;
+int16_t gz;
 unsigned long prev_time = 0;
 unsigned long current_time = 0;
 float time_step = 0.0;
@@ -71,14 +71,53 @@ void loop() {
 //  Serial.print(data.laserRight);
 //  Serial.print("\n");
 
-  MoveDir(FORWARD);
+  //MoveDir(FORWARD);
+  digitalWrite(pinI3,HIGH); //motor A counter-clockwise
+  digitalWrite(pinI4,LOW);
+  digitalWrite(pinI2,LOW); //motor B clockwise
+  digitalWrite(pinI1,HIGH);
+ 
   if(data.laserFront < laserActionThreshhold)
   {
-    MoveDir(STOP);
+    //MoveDir(STOP);
+    digitalWrite(pinI4,LOW); //motor A stop
+    digitalWrite(pinI3,LOW);
+    digitalWrite(pinI2,LOW); //motor B stop
+    digitalWrite(pinI1,LOW);
     delay(1000);
-    turn(180, RIGHT); //turn around 180 degree
-//    MoveDir(RIGHT);
+    
+//    turn(180, RIGHT); //turn around 180 degree
+//    //MoveDir(RIGHT);
+//    digitalWrite(pinI3,HIGH); //motor A counter-clockwise
+//    digitalWrite(pinI4,LOW);
+//
+//    digitalWrite(pinI1,LOW); //motor B counter-clockwise
+//    digitalWrite(pinI2,HIGH);
 //    delay(300);
+
+    total_angle_change = 0;
+    time_step = 0;
+    current_time = 0;
+    prev_time = 0;
+    accelgyro.resetGyroscopePath();
+    
+    while(total_angle_change < 90){  
+      digitalWrite(pinI3,HIGH); //motor A counter-clockwise
+      digitalWrite(pinI4,LOW);
+      
+      digitalWrite(pinI1,LOW); //motor B counter-clockwise
+      digitalWrite(pinI2,HIGH);
+      current_time = millis();
+      time_step = (current_time - prev_time) / 1000.0;
+      prev_time = current_time;
+      gz= accelgyro.getRotationZ();
+      
+      
+      gz = gz/131;   //131 is a gyro scale based on datasheet
+      
+      angle_change = abs(gz * time_step);
+      total_angle_change += angle_change;
+    }
   }
   CheckSide(LEFT, data.laserLeft);
   CheckSide(RIGHT, data.laserRight);
@@ -229,25 +268,24 @@ bool CheckSide(int side, int dist)
   }
 }
 
-void turn(int angle, int dir)
-{
-  total_angle_change = 0;
-  time_step = 0;
-  current_time = 0;
-  prev_time = 0;
-  while(total_angle_change < angle){  
-    MoveDir(dir); 
-    delay(10);
-    current_time = millis();
-    time_step = (current_time - prev_time) / 1000.0;
-    prev_time = current_time;
-
-    accelgyro.getRotation(&gx, &gy, &gz);
-    
-    gz = gz/131;   //131 is a gyro scale based on datasheet
-    
-    angle_change = abs(gz * time_step);
-    total_angle_change += angle_change;
-  }
-}
+//void turn(int angle, int dir)
+//{
+//  total_angle_change = 0;
+//  time_step = 0;
+//  current_time = 0;
+//  prev_time = 0;
+//  while(total_angle_change < angle){  
+//    MoveDir(dir); 
+//    current_time = millis();
+//    time_step = (current_time - prev_time) / 1000.0;
+//    prev_time = current_time;
+//
+//    accelgyro.getRotation(&gx, &gy, &gz);
+//    
+//    gz = gz/131;   //131 is a gyro scale based on datasheet
+//    
+//    angle_change = abs(gz * time_step);
+//    total_angle_change += angle_change;
+//  }
+//}
 
