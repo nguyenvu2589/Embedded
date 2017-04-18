@@ -10,13 +10,13 @@ VL6180X sensor1;
 VL6180X sensor2;
 VL6180X sensor3;
 
-int sensor1_pin = 15;
+int sensor1_pin = 17;
 int sensor2_pin = 16;
-int sensor3_pin = 17;
+int sensor3_pin = 15;
 
 void setup() 
 {
-  Serial.begin(230400/);
+  Serial.begin(57600);
   Wire.begin();
   pinMode(sensor1_pin,OUTPUT);
   pinMode(sensor2_pin,OUTPUT);
@@ -90,26 +90,19 @@ int dist_3 = 0;
 void loop() 
 { 
   
-//  dist_1 = sensor1.readRangeSingleMillimeters();
-//
-//  dist_2 = sensor2.readRangeSingleMillimeters();
-//  
-//  dist_3 = sensor3.readRangeSingleMillimeters();
-  
-  
   Serial.print("Sensor 1: ");
   Serial.print(sensor1.readRangeSingleMillimeters());
-  delay(20);
+  delay(10);
   Serial.print("\t");
   
   Serial.print("Sensor 2: ");
   Serial.print(sensor2.readRangeSingleMillimeters());
-  delay(20);
+  delay(10);
   Serial.print("\t");
   
   Serial.print("Sensor 3: ");
   Serial.print(sensor3.readRangeSingleMillimeters());
-  delay(20);
+  delay(10);
 
   Serial.println();
 }

@@ -8,9 +8,9 @@ VL6180X sensor1;
 VL6180X sensor2;
 VL6180X sensor3;
 
-int sensor1_pin = 15;
+int sensor1_pin = 17;
 int sensor2_pin = 16;
-int sensor3_pin = 17;
+int sensor3_pin = 15;
 
 int laserActionThreshhold = 150;
 //End
@@ -82,7 +82,8 @@ void loop() {
   {
     MoveDir(STOP);
     delay(1000);
-    turn(180, RIGHT); //turn around 180 degree
+    MoveDir(RIGHT);
+    delay(500);
   }
   CheckSide(LEFT, data.laserLeft);
   CheckSide(RIGHT, data.laserRight);
@@ -231,24 +232,6 @@ bool CheckSide(int side, int dist)
       delay(50);
       MoveDir(FORWARD);
     }
-  }
-}
-
-void turn(int angle, int dir)
-{
-  total_angle_change = 0;
-  while(total_angle_change < angle){
-    MoveDir(dir);
-    current_time = millis();
-    time_step = (current_time - prev_time) / 1000.0;
-    prev_time = current_time;
-
-    accelgyro.getRotation(&gx, &gy, &gz);
-    gz = gz/131;   //131 is a gyro scale based on datasheet
-    
-    angle_change = abs(gz * time_step);
-    total_angle_change += angle_change;
-    MoveDir(STOP);
   }
 }
 
