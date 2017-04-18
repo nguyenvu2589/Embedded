@@ -61,15 +61,9 @@ void setup() {
 }
 
 void loop() {
-  data = Scan(data);
+  Scan();
 //////////////////Data scan Debuger////////////////
-//  Serial.print("Start Scan");
-//  Serial.print(data.gyrX);
-//  Serial.print("\t");
-//  Serial.print(data.gyrY);
-//  Serial.print("\t");
-//  Serial.print(data.gyrZ);
-//  Serial.print("\t");
+//  Serial.print("Start Scan: \t");
 //  Serial.print(data.laserLeft);
 //  Serial.print("\t");
 //  Serial.print(data.laserFront);
@@ -82,8 +76,9 @@ void loop() {
   {
     MoveDir(STOP);
     delay(1000);
-    MoveDir(RIGHT);
-    delay(500);
+    turn(180, RIGHT); //turn around 180 degree
+//    MoveDir(RIGHT);
+//    delay(300);
   }
   CheckSide(LEFT, data.laserLeft);
   CheckSide(RIGHT, data.laserRight);
@@ -94,59 +89,58 @@ void MoveDir(int dir)
   switch (dir)
   {
     case LEFT://hard left
-      Move(-1,1);
+      //Move(-1,1);
+      digitalWrite(pinI4,HIGH); //motor A clockwise
+      digitalWrite(pinI3,LOW);  
+      
+      digitalWrite(pinI2,LOW); //motor B clockwise
+      digitalWrite(pinI1,HIGH);
       break;
+      
     case FORWARD://forward
-      Move(1,1);
+      //Move(1,1);
+      digitalWrite(pinI3,HIGH); //motor A counter-clockwise
+      digitalWrite(pinI4,LOW);
+      
+      digitalWrite(pinI2,LOW); //motor B clockwise
+      digitalWrite(pinI1,HIGH);
       break;
+      
     case RIGHT://hard right
-      Move(1,-1);
-      break;
-    case STOP://stop
-      Move(0,0);
-      break;
-    case STRAFELEFT://strafe left
-      Move(0,1);
-      break;
-    case STRAFERIGHT://strafe right
-      Move(1,0);
-      break;
-  }
-}
+      //Move(1,-1);
+      digitalWrite(pinI3,HIGH); //motor A counter-clockwise
+      digitalWrite(pinI4,LOW);
 
-//MotorA is left, MotorB is right
-//1 = forward, 0 = stopped, -1 = reverse
-void Move(int motorA, int motorB)
-{
-  if(motorA == -1)
-  {//CLockwise
-    digitalWrite(pinI4,HIGH);
-    digitalWrite(pinI3,LOW);
-  }
-  else if(motorA == 0)
-  {//No Movement
-    digitalWrite(pinI4,LOW);//turn DC Motor B move clockwise
-    digitalWrite(pinI3,LOW);
-  }
-  else
-  {//Counter/AntiClockwise
-    digitalWrite(pinI3,HIGH);//turn DC Motor B move clockwise
-    digitalWrite(pinI4,LOW);
-  }
-  if(motorB == -1)
-  {//COunter/AntiClockwise
-    digitalWrite(pinI1,LOW);//turn DC Motor A move clockwise
-    digitalWrite(pinI2,HIGH);
-  }
-  else if(motorB == 0)
-  {//Not moving
-    digitalWrite(pinI2,LOW);//turn DC Motor A move clockwise
-    digitalWrite(pinI1,LOW);
-  }
-  else
-  {//CLockwise
-    digitalWrite(pinI2,LOW);//turn DC Motor A move clockwise
-    digitalWrite(pinI1,HIGH);
+      digitalWrite(pinI1,LOW); //motor B counter-clockwise
+      digitalWrite(pinI2,HIGH);
+      break;
+      
+    case STOP://stop
+      //Move(0,0);
+      digitalWrite(pinI4,LOW); //motor A stop
+      digitalWrite(pinI3,LOW);
+
+      digitalWrite(pinI2,LOW); //motor B stop
+      digitalWrite(pinI1,LOW);
+      break;
+      
+    case STRAFELEFT://strafe left
+      //Move(0,1);
+      digitalWrite(pinI4,LOW); //motor A stop
+      digitalWrite(pinI3,LOW);
+
+      digitalWrite(pinI2,LOW); //motor B clockwise
+      digitalWrite(pinI1,HIGH);
+      break;
+      
+    case STRAFERIGHT://strafe right
+      //Move(1,0);
+      digitalWrite(pinI3,HIGH); //motor A counter-clockwise
+      digitalWrite(pinI4,LOW);
+
+      digitalWrite(pinI2,LOW); //motor B stop
+      digitalWrite(pinI1,LOW);
+      break;
   }
 }
 
@@ -201,16 +195,16 @@ void LaserInit()
 
   delay(1000);
 }
-
-ScanData Scan(ScanData data)
+void Scan()
 {
   data.laserRight = sensor1.readRangeSingleMillimeters();
-  delay(20);
+  if (sensor1.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
+  //delay(20);
   data.laserFront = sensor2.readRangeSingleMillimeters();
-  delay(20);
+  if (sensor2.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
+  //delay(20);
   data.laserLeft = sensor3.readRangeSingleMillimeters();
-
-  return data;
+  if (sensor3.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
 }
 
 bool CheckSide(int side, int dist)
@@ -232,6 +226,28 @@ bool CheckSide(int side, int dist)
       delay(50);
       MoveDir(FORWARD);
     }
+  }
+}
+
+void turn(int angle, int dir)
+{
+  total_angle_change = 0;
+  time_step = 0;
+  current_time = 0;
+  prev_time = 0;
+  while(total_angle_change < angle){  
+    MoveDir(dir); 
+    delay(10);
+    current_time = millis();
+    time_step = (current_time - prev_time) / 1000.0;
+    prev_time = current_time;
+
+    accelgyro.getRotation(&gx, &gy, &gz);
+    
+    gz = gz/131;   //131 is a gyro scale based on datasheet
+    
+    angle_change = abs(gz * time_step);
+    total_angle_change += angle_change;
   }
 }
 
