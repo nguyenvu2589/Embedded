@@ -12,7 +12,7 @@ int sensor1_pin = 17;
 int sensor2_pin = 16;
 int sensor3_pin = 15;
 
-int laserActionThreshhold = 150;
+int laserActionThreshold = 150;
 //End
 
 //Motor Vars
@@ -26,7 +26,7 @@ int speedpinB = 27; //enable motor B
 
 //Accel vars
 MPU6050 accelgyro;
-int16_t gz;
+int16_t gy;
 unsigned long prev_time = 0;
 unsigned long current_time = 0;
 float time_step = 0.0;
@@ -61,16 +61,7 @@ void setup() {
 }
 
 void loop() {
-//Read Data
-  data.laserRight = sensor1.readRangeSingleMillimeters();
-  delay(20);
-  
-  data.laserFront = sensor2.readRangeSingleMillimeters();
-  delay(20);
-  
-  data.laserLeft = sensor3.readRangeSingleMillimeters();
-  delay(20);
-  
+  Scan();
 //////////////////Data scan Debuger////////////////
 //  Serial.print("Start Scan: \t");
 //  Serial.print(data.laserLeft);
@@ -80,77 +71,37 @@ void loop() {
 //  Serial.print(data.laserRight);
 //  Serial.print("\n");
 
-  //MoveDir(FORWARD);
-  digitalWrite(pinI3,HIGH); //motor A counter-clockwise
-  digitalWrite(pinI4,LOW);
-  digitalWrite(pinI2,LOW); //motor B clockwise
-  digitalWrite(pinI1,HIGH);
- 
-  if(data.laserFront < laserActionThreshhold)
+  MoveDir(FORWARD);
+  if(data.laserFront < laserActionThreshold)
   {
-    //MoveDir(STOP);
-    digitalWrite(pinI4,LOW); //motor A stop
-    digitalWrite(pinI3,LOW);
-    digitalWrite(pinI2,LOW); //motor B stop
-    digitalWrite(pinI1,LOW);
+    Serial.print("\t\t***Stopped, decision making***\n");
+    MoveDir(STOP);
     delay(1000);
-    
-    total_angle_change = 0;
-    time_step = 0;
-    current_time = 0;
-    prev_time = 0;
+    if(data.laserLeft < laserActionThreshold && data.laserRight < laserActionThreshold) // Checks to see if at a deadend
+    {
+      turn(180, RIGHT); //turn around 180 degree
+      Serial.print("\t\t***Doing 180***\n");
+    }
+    else if(data.laserLeft >= laserActionThreshold) // Turn left if possible
+    {
+      turn(90, LEFT); //
+      Serial.print("\t\t***Turning Left****\n");
+    }
+    else      // Turn right
+    {
+      turn(90, RIGHT);
+      Serial.print("\t\t***Turning Rightt****\n");
 
-    while(total_angle_change < 90){  
-      //Turn right
-      digitalWrite(pinI3,HIGH); //motor A counter-clockwise
-      digitalWrite(pinI4,LOW);
-      digitalWrite(pinI1,LOW); //motor B counter-clockwise
-      digitalWrite(pinI2,HIGH);
-      
-      current_time = millis();
-      time_step = (current_time - prev_time) / 1000.0;
-      prev_time = current_time;
-      gz= accelgyro.getRotationZ();
-      
-      gz = gz/131;   //131 is a gyro scale based on datasheet
-      
-      angle_change = abs(gz * time_step);
-      total_angle_change += angle_change;
     }
   }
-
-  if(data.laserLeft < 200)
-  {
-    //StrafeLEFT
-    digitalWrite(pinI3,HIGH); //motor A counter-clockwise
-    digitalWrite(pinI4,LOW);
-    digitalWrite(pinI2,LOW); //motor B stop
-    digitalWrite(pinI1,LOW);
-    
-    delay(50);
-
-    //Move forward
-    digitalWrite(pinI3,HIGH); //motor A counter-clockwise
-    digitalWrite(pinI4,LOW);
-    digitalWrite(pinI2,LOW); //motor B clockwise
-    digitalWrite(pinI1,HIGH);
-  }
- 
-  if(data.laserRight < 200)
-  {
-    digitalWrite(pinI4,LOW); //motor A stop
-    digitalWrite(pinI3,LOW);
-    digitalWrite(pinI2,LOW); //motor B clockwise
-    digitalWrite(pinI1,HIGH);
-    
-    delay(50);
-    
-    //Move forward
-    digitalWrite(pinI3,HIGH); //motor A counter-clockwise
-    digitalWrite(pinI4,LOW);
-    digitalWrite(pinI2,LOW); //motor B clockwise
-    digitalWrite(pinI1,HIGH);
-  }
+  CheckSide(LEFT, data.laserLeft);
+  CheckSide(RIGHT, data.laserRight);
+//  if(data.laserLeft >= laserActionThreshold)
+//  {
+//    MoveDir(STOP);
+//    delay(1000);
+//    turn(90, LEFT);
+//  }
 }
 
 void MoveDir(int dir)
@@ -264,3 +215,64 @@ void LaserInit()
 
   delay(1000);
 }
+void Scan()
+{
+  data.laserRight = sensor1.readRangeSingleMillimeters();
+  if (sensor1.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
+  //delay(20);
+  data.laserFront = sensor2.readRangeSingleMillimeters();
+  if (sensor2.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
+  //delay(20);
+  data.laserLeft = sensor3.readRangeSingleMillimeters();
+  if (sensor3.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
+}
+
+bool CheckSide(int side, int dist)
+{
+  if(side == LEFT)
+  {//left
+    if(dist < laserActionThreshold)
+    {
+      MoveDir(STRAFERIGHT);
+      delay(50);
+      MoveDir(FORWARD);
+    }
+    else if (dist >= laserActionThreshold)
+    {
+      turn(90, LEFT);
+      delay(5);
+    }
+  }
+  else
+  {//right
+    if(dist < laserActionThreshold)
+    {
+      MoveDir(STRAFELEFT);
+      delay(50);
+      MoveDir(FORWARD);
+    }
+  }
+}
+
+void turn(int angle, int dir)
+{
+  total_angle_change = 0;
+  time_step = 0;
+  current_time = 0;
+  prev_time = 0;
+  while(total_angle_change < angle){  
+    MoveDir(dir); 
+    delay(10);
+    current_time = millis();
+    time_step = (current_time - prev_time) / 1000.0;
+    prev_time = current_time;
+
+    gy = accelgyro.getRotationY();
+    
+    gy = gy/131;   //131 is a gyro scale based on datasheet
+    
+    angle_change = abs(gy * time_step);
+    total_angle_change += angle_change;
+  }
+}
+
