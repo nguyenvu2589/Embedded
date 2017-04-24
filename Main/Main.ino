@@ -104,13 +104,7 @@ void TurnDeadEnd(int dir)
     Scan();
     if(data.laserFront > 400)
     {
-      WriteMsg("DeadEnd Scan Check", false);
-      delay(10);
-      if(data.laserFront > 400)
-      {
-        WriteMsg("DeadEnd Scan Confirmed", true);
-        break;
-      }
+      break;
     }
   }
   WriteMsg("DeadEnd Turn Complete", true);
@@ -128,11 +122,7 @@ void TurnIntersection(int dir)
     Scan();
     if(data.laserFront < 400)
     {
-      delay(10);
-      if(data.laserFront < 400)
-      {
-        break;
-      }
+      break;
     }
   }
   WriteMsg("Intersection Turn Second Loop", true);
@@ -141,11 +131,7 @@ void TurnIntersection(int dir)
     Scan();
     if(data.laserFront > 400)
     {
-      delay(10);
-      if(data.laserFront > 400)
-      {
-        break;
-      }
+      break;
     }
   }
   WriteMsg("Intersection Turn Complete", true);
