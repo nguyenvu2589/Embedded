@@ -58,6 +58,8 @@ void loop() {
   Scan();
 
   MoveDir(FORWARD);
+  delay(50);
+  MoveDir(STOP);
   if(millis() - current_time > 1000)
   {
     if(data.laserFront < laserActionThreshold)
@@ -96,11 +98,12 @@ void loop() {
 
 void TurnDeadEnd(int dir)
 {
-  delay(600);
   WriteMsg("DeadEnd Loop Start", true);
-  MoveDir(dir);
   while(true)
   {
+    MoveDir(dir);
+    delay(50);
+    MoveDir(STOP);
     Scan();
     if(data.laserFront > 400)
     {
@@ -114,11 +117,12 @@ void TurnDeadEnd(int dir)
 
 void TurnIntersection(int dir)
 {
-  delay(600);
   WriteMsg("Intersection Turn First Loop", true);
-  MoveDir(dir);
   while(true)
   {
+    MoveDir(dir);
+    delay(50);
+    MoveDir(STOP);
     Scan();
     if(data.laserFront < 400)
     {
@@ -128,6 +132,9 @@ void TurnIntersection(int dir)
   WriteMsg("Intersection Turn Second Loop", true);
   while(true)
   {
+    MoveDir(dir);
+    delay(50);
+    MoveDir(STOP);
     Scan();
     if(data.laserFront > 400)
     {
@@ -255,10 +262,10 @@ void Scan()
 {
   data.laserRight = sensor1.readRangeSingleMillimeters();
   if (sensor1.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
-  delay(10);
+  //delay(10);
   data.laserFront = sensor2.readRangeSingleMillimeters();
   if (sensor2.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
-  delay(10);
+  //delay(10);
   data.laserLeft = sensor3.readRangeSingleMillimeters();
   if (sensor3.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
   
@@ -278,7 +285,7 @@ bool CheckSide(int side, int dist)
       WriteMsg("Check Left Action", true);
       MoveDir(STRAFERIGHT);
       delay(25);
-      MoveDir(FORWARD);
+      MoveDir(STOP);
     }
   }
   else
@@ -288,71 +295,36 @@ bool CheckSide(int side, int dist)
       WriteMsg("Check Right Action", true);
       MoveDir(STRAFELEFT);
       delay(25);
-      MoveDir(FORWARD);
+      MoveDir(STOP);
     }
   }
-}
-
-void turn(int dir)
-{
-    MoveDir(FORWARD); 
-    delay(50);
-
-    if(dir == RIGHT){
-      MoveDir(dir);
-      delay(50);
-      
-      while(data.laserRight < 255){
-        MoveDir(dir);
-      }    
-    }
-    else if(dir == LEFT){
-      MoveDir(dir);
-      delay(50);
-      
-      while(data.laserLeft < 255){
-        MoveDir(dir);
-      }   
-    }
 }
 
 void WriteMsg(String msg, bool newLine)
 {
-  if(newLine)
-  {
-    Serial.print(msg);
-    Serial.print("\n");
-  }
-  else
-  {
-    Serial.print(msg);
-    Serial.print("\t");
-  }
+//  if(newLine)
+//  {
+//    Serial.print(msg);
+//    Serial.print("\n");
+//  }
+//  else
+//  {
+//    Serial.print(msg);
+//    Serial.print("\t");
+//  }
 }
 
 void WriteInt(int val, bool newLine)
 {
-  if(newLine)
-  {
-    Serial.print(val);
-    Serial.print("\n");
-  }
-  else
-  {
-    Serial.print(val);
-    Serial.print("\t");
-  }
-}
-
-//void right_turn(int dist)
-//{
-//  MoveDir(FORWARD);
-//  delay(100);
-//  while (dist > laserActionThreshhold)
+//  if(newLine)
 //  {
-//    MoveDir(RIGHT);
-//    delay(100);
+//    Serial.print(val);
+//    Serial.print("\n");
 //  }
-//  CheckSide(2,150);
-//}
+//  else
+//  {
+//    Serial.print(val);
+//    Serial.print("\t");
+//  }
+}
 
