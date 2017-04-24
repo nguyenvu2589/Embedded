@@ -12,7 +12,7 @@ int sensor1_pin = 17;
 int sensor2_pin = 16;
 int sensor3_pin = 15;
 
-int laserActionThreshold = 150;
+int laserActionThreshold = 100;
 //End
 
 //Motor Vars
@@ -25,13 +25,8 @@ int speedpinB = 27; //enable motor B
 //end
 
 //Accel vars
-MPU6050 accelgyro;
-int16_t gy;
-unsigned long prev_time = 0;
 unsigned long current_time = 0;
 float time_step = 0.0;
-float angle_change = 0;
-float total_angle_change = 0;
 //end
 
 //Consts
@@ -57,51 +52,105 @@ void setup() {
   Wire.begin();
   MoveInit();
   LaserInit();
-  accelgyro.initialize();
 }
 
 void loop() {
   Scan();
-//////////////////Data scan Debuger////////////////
-//  Serial.print("Start Scan: \t");
-//  Serial.print(data.laserLeft);
-//  Serial.print("\t");
-//  Serial.print(data.laserFront);
-//  Serial.print("\t");
-//  Serial.print(data.laserRight);
-//  Serial.print("\n");
 
   MoveDir(FORWARD);
-  if(data.laserFront < laserActionThreshold)
+  if(millis() - current_time > 1000)
   {
-    Serial.print("\t\t***Stopped, decision making***\n");
-    MoveDir(STOP);
-    delay(1000);
-    if(data.laserLeft < laserActionThreshold && data.laserRight < laserActionThreshold) // Checks to see if at a deadend
+    if(data.laserFront < laserActionThreshold)
     {
-      turn(180, RIGHT); //turn around 180 degree
-      Serial.print("\t\t***Doing 180***\n");
+      WriteMsg("Front Sensor Action", false);
+      if(data.laserLeft > 400)
+      {
+        WriteMsg("Left", true);
+        TurnDeadEnd(LEFT);
+      }
+      else if(data.laserRight > 400)
+      {
+        WriteMsg("Right", true);
+        TurnDeadEnd(RIGHT);
+      }
+      else
+      {
+        WriteMsg("Reverse", true);
+        TurnDeadEnd(LEFT);
+      }
     }
-    else if(data.laserLeft >= laserActionThreshold) // Turn left if possible
+    else if(data.laserLeft > 400)
     {
-      turn(90, LEFT); //
-      Serial.print("\t\t***Turning Left****\n");
+      WriteMsg("Left Sensor Action", true);
+      TurnIntersection(LEFT);
     }
-    else      // Turn right
+    else if(data.laserRight > 400)
     {
-      turn(90, RIGHT);
-      Serial.print("\t\t***Turning Rightt****\n");
-
+      WriteMsg("Right Sensor Action", true);
+      TurnIntersection(RIGHT);    
     }
   }
   CheckSide(LEFT, data.laserLeft);
   CheckSide(RIGHT, data.laserRight);
-//  if(data.laserLeft >= laserActionThreshold)
-//  {
-//    MoveDir(STOP);
-//    delay(1000);
-//    turn(90, LEFT);
-//  }
+}
+
+void TurnDeadEnd(int dir)
+{
+  delay(600);
+  WriteMsg("DeadEnd Loop Start", true);
+  MoveDir(dir);
+  while(true)
+  {
+    Scan();
+    if(data.laserFront > 400)
+    {
+      WriteMsg("DeadEnd Scan Check", false);
+      delay(10);
+      if(data.laserFront > 400)
+      {
+        WriteMsg("DeadEnd Scan Confirmed", true);
+        break;
+      }
+    }
+  }
+  WriteMsg("DeadEnd Turn Complete", true);
+  MoveDir(FORWARD);
+  current_time = millis();
+}
+
+void TurnIntersection(int dir)
+{
+  delay(600);
+  WriteMsg("Intersection Turn First Loop", true);
+  MoveDir(dir);
+  while(true)
+  {
+    Scan();
+    if(data.laserFront < 400)
+    {
+      delay(10);
+      if(data.laserFront < 400)
+      {
+        break;
+      }
+    }
+  }
+  WriteMsg("Intersection Turn Second Loop", true);
+  while(true)
+  {
+    Scan();
+    if(data.laserFront > 400)
+    {
+      delay(10);
+      if(data.laserFront > 400)
+      {
+        break;
+      }
+    }
+  }
+  WriteMsg("Intersection Turn Complete", true);
+  MoveDir(FORWARD);
+  current_time = millis();
 }
 
 void MoveDir(int dir)
@@ -215,16 +264,23 @@ void LaserInit()
 
   delay(1000);
 }
+
 void Scan()
 {
   data.laserRight = sensor1.readRangeSingleMillimeters();
   if (sensor1.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
-  //delay(20);
+  delay(10);
   data.laserFront = sensor2.readRangeSingleMillimeters();
   if (sensor2.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
-  //delay(20);
+  delay(10);
   data.laserLeft = sensor3.readRangeSingleMillimeters();
   if (sensor3.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
+  
+////////////////Data scan Debuger////////////////
+  WriteMsg("Scan", false);
+  WriteInt(data.laserLeft, false);
+  WriteInt(data.laserFront, false);
+  WriteInt(data.laserRight, true);
 }
 
 bool CheckSide(int side, int dist)
@@ -233,46 +289,84 @@ bool CheckSide(int side, int dist)
   {//left
     if(dist < laserActionThreshold)
     {
+      WriteMsg("Check Left Action", true);
       MoveDir(STRAFERIGHT);
-      delay(50);
+      delay(25);
       MoveDir(FORWARD);
-    }
-    else if (dist >= laserActionThreshold)
-    {
-      turn(90, LEFT);
-      delay(5);
     }
   }
   else
   {//right
     if(dist < laserActionThreshold)
     {
+      WriteMsg("Check Right Action", true);
       MoveDir(STRAFELEFT);
-      delay(50);
+      delay(25);
       MoveDir(FORWARD);
     }
   }
 }
 
-void turn(int angle, int dir)
+void turn(int dir)
 {
-  total_angle_change = 0;
-  time_step = 0;
-  current_time = 0;
-  prev_time = 0;
-  while(total_angle_change < angle){  
-    MoveDir(dir); 
-    delay(10);
-    current_time = millis();
-    time_step = (current_time - prev_time) / 1000.0;
-    prev_time = current_time;
+    MoveDir(FORWARD); 
+    delay(50);
 
-    gy = accelgyro.getRotationY();
-    
-    gy = gy/131;   //131 is a gyro scale based on datasheet
-    
-    angle_change = abs(gy * time_step);
-    total_angle_change += angle_change;
+    if(dir == RIGHT){
+      MoveDir(dir);
+      delay(50);
+      
+      while(data.laserRight < 255){
+        MoveDir(dir);
+      }    
+    }
+    else if(dir == LEFT){
+      MoveDir(dir);
+      delay(50);
+      
+      while(data.laserLeft < 255){
+        MoveDir(dir);
+      }   
+    }
+}
+
+void WriteMsg(String msg, bool newLine)
+{
+  if(newLine)
+  {
+    Serial.print(msg);
+    Serial.print("\n");
+  }
+  else
+  {
+    Serial.print(msg);
+    Serial.print("\t");
   }
 }
+
+void WriteInt(int val, bool newLine)
+{
+  if(newLine)
+  {
+    Serial.print(val);
+    Serial.print("\n");
+  }
+  else
+  {
+    Serial.print(val);
+    Serial.print("\t");
+  }
+}
+
+//void right_turn(int dist)
+//{
+//  MoveDir(FORWARD);
+//  delay(100);
+//  while (dist > laserActionThreshhold)
+//  {
+//    MoveDir(RIGHT);
+//    delay(100);
+//  }
+//  CheckSide(2,150);
+//}
 
