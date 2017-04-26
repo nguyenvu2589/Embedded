@@ -12,7 +12,7 @@ int sensor1_pin = 17;
 int sensor2_pin = 16;
 int sensor3_pin = 15;
 
-int laserActionThreshold = 100;
+int laserActionThreshold = 150;
 //End
 
 //Motor Vars
@@ -49,28 +49,32 @@ ScanData data;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
+  WriteMsg("Init Begin", true);
   Wire.begin();
+  WriteMsg("Wire Loaded", true);
   MoveInit();
+  WriteMsg("Motors Loaded", true);
   LaserInit();
+  WriteMsg("Lasers Loaded", true);
 }
 
 void loop() {
   Scan();
 
   MoveDir(FORWARD);
-  delay(50);
-  MoveDir(STOP);
-  if(millis() - current_time > 1000)
-  {
-    if(data.laserFront < laserActionThreshold)
+//  if(millis() - current_time > 750)
+//  {
+    if(data.laserFront < 125)
     {
+      delay(175);
+      MoveDir(STOP);
       WriteMsg("Front Sensor Action", false);
-      if(data.laserLeft > 400)
+      if(data.laserLeft > 500)
       {
         WriteMsg("Left", true);
         TurnDeadEnd(LEFT);
       }
-      else if(data.laserRight > 400)
+      else if(data.laserRight > 500)
       {
         WriteMsg("Right", true);
         TurnDeadEnd(RIGHT);
@@ -81,23 +85,28 @@ void loop() {
         TurnDeadEnd(LEFT);
       }
     }
-    else if(data.laserLeft > 400)
+    else if(data.laserLeft > 500)
     {
+      delay(175);
+      MoveDir(STOP);
       WriteMsg("Left Sensor Action", true);
       TurnIntersection(LEFT);
     }
-    else if(data.laserRight > 400)
+    else if(data.laserRight > 500)
     {
+      delay(175);
+      MoveDir(STOP);
       WriteMsg("Right Sensor Action", true);
       TurnIntersection(RIGHT);    
     }
-  }
+//  }
   CheckSide(LEFT, data.laserLeft);
   CheckSide(RIGHT, data.laserRight);
 }
 
 void TurnDeadEnd(int dir)
 {
+  delay(300);
   WriteMsg("DeadEnd Loop Start", true);
   while(true)
   {
@@ -105,18 +114,28 @@ void TurnDeadEnd(int dir)
     delay(50);
     MoveDir(STOP);
     Scan();
-    if(data.laserFront > 400)
+    if(data.laserFront > 500)
     {
-      break;
+      WriteMsg("DeadEnd Scan Check", false);
+      delay(10);
+      if(data.laserFront > 500)
+      {
+        WriteMsg("DeadEnd Scan Confirmed", true);
+        break;
+      }
     }
   }
   WriteMsg("DeadEnd Turn Complete", true);
+  MoveDir(dir);
+  delay(50);
   MoveDir(FORWARD);
+  delay(500);
   current_time = millis();
 }
 
 void TurnIntersection(int dir)
 {
+  delay(300);
   WriteMsg("Intersection Turn First Loop", true);
   while(true)
   {
@@ -124,9 +143,13 @@ void TurnIntersection(int dir)
     delay(50);
     MoveDir(STOP);
     Scan();
-    if(data.laserFront < 400)
+    if(data.laserFront < 500)
     {
-      break;
+      delay(10);
+      if(data.laserFront < 500)
+      {
+        break;
+      }
     }
   }
   WriteMsg("Intersection Turn Second Loop", true);
@@ -136,13 +159,20 @@ void TurnIntersection(int dir)
     delay(50);
     MoveDir(STOP);
     Scan();
-    if(data.laserFront > 400)
+    if(data.laserFront > 500)
     {
-      break;
+      delay(10);
+      if(data.laserFront > 500)
+      {
+        break;
+      }
     }
   }
   WriteMsg("Intersection Turn Complete", true);
+  MoveDir(dir);
+  delay(50);
   MoveDir(FORWARD);
+  delay(500);
   current_time = millis();
 }
 
@@ -233,7 +263,7 @@ void LaserInit()
   delay(50);
   sensor1.init();
   sensor1.configureDefault();
-  sensor1.setScaling(2);
+  sensor1.setScaling(3);
   sensor1.setTimeout(500);
   sensor1.setAddress(0x30);
   
@@ -242,7 +272,7 @@ void LaserInit()
   delay(50);
   sensor2.init();
   sensor2.configureDefault();
-  sensor2.setScaling(2);
+  sensor2.setScaling(3);
   sensor2.setTimeout(500);
   sensor2.setAddress(0x32);
 
@@ -251,7 +281,7 @@ void LaserInit()
   delay(50);
   sensor3.init();
   sensor3.configureDefault();
-  sensor3.setScaling(2);
+  sensor3.setScaling(3);
   sensor3.setTimeout(500);
   sensor3.setAddress(0x34);
 
@@ -261,13 +291,10 @@ void LaserInit()
 void Scan()
 {
   data.laserRight = sensor1.readRangeSingleMillimeters();
-  if (sensor1.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
-  //delay(10);
+
   data.laserFront = sensor2.readRangeSingleMillimeters();
-  if (sensor2.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
-  //delay(10);
+
   data.laserLeft = sensor3.readRangeSingleMillimeters();
-  if (sensor3.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
   
 ////////////////Data scan Debuger////////////////
   WriteMsg("Scan", false);
@@ -285,7 +312,7 @@ bool CheckSide(int side, int dist)
       WriteMsg("Check Left Action", true);
       MoveDir(STRAFERIGHT);
       delay(25);
-      MoveDir(STOP);
+      MoveDir(FORWARD);
     }
   }
   else
@@ -295,36 +322,35 @@ bool CheckSide(int side, int dist)
       WriteMsg("Check Right Action", true);
       MoveDir(STRAFELEFT);
       delay(25);
-      MoveDir(STOP);
+      MoveDir(FORWARD);
     }
   }
 }
 
 void WriteMsg(String msg, bool newLine)
 {
-//  if(newLine)
-//  {
-//    Serial.print(msg);
-//    Serial.print("\n");
-//  }
-//  else
-//  {
-//    Serial.print(msg);
-//    Serial.print("\t");
-//  }
+  if(newLine)
+  {
+    Serial.print(msg);
+    Serial.print("\n");
+  }
+  else
+  {
+    Serial.print(msg);
+    Serial.print("\t");
+  }
 }
 
 void WriteInt(int val, bool newLine)
 {
-//  if(newLine)
-//  {
-//    Serial.print(val);
-//    Serial.print("\n");
-//  }
-//  else
-//  {
-//    Serial.print(val);
-//    Serial.print("\t");
-//  }
+  if(newLine)
+  {
+    Serial.print(val);
+    Serial.print("\n");
+  }
+  else
+  {
+    Serial.print(val);
+    Serial.print("\t");
+  }
 }
-
