@@ -103,6 +103,7 @@ void Scan()
 }
 
 void loop() {
+    bool avaiTurn = false;
 
     for (j = 0; j < 4 ; j++)
     {
@@ -113,90 +114,58 @@ void loop() {
     //read in info
     Scan();
     
-    // front sensor blocks
-    // 4 case : 1 deadend // 2 turn left only // 3 turn right only // 4 turn left or right.
-    //Front laser detect wall that is in 125mm range
-    if(data.laserFront < 125)
-    {
-        MoveDir(STOP);
-  
-        WriteMsg("Front Sensor Action", false);
-        //Check if the LEFT turn is available
-        if(data.laserLeft > 400)
-        {
-            WriteMsg("Left", true);
-            arr[arr_size] = LEFT;
-            arr_size++;
-        }
-
-        //Check if the RIGHT turn is available
-        if(data.laserRight > 400)
-        {
-            WriteMsg("Right", true);
-            arr[arr_size] = RIGHT;
-            arr_size++;
-        }
-
-        //Hit a deadend, turn around
-        else
-        {
-            WriteMsg("Reverse", true);
-            update_orientation(BACK);
-            TurnDeadEnd(LEFT);
-
-//            if(deadEndDirection() == east){
-//              deadEndEast = true;
-//            }
-//            else if(deadEndDirection() == south){
-//              deadEndSouth = true;
-//            }
-
-            //After turned, move forward for 500ms then STOP
-            MoveDir(FORWARD);
-            delay(500);
-            MoveDir(STOP);
-
-            //Scan again, update laser data
-            Scan();
-        }
-    }
-
-    //WHILE car is moving
-    //Check if car is able to turn LEFT
-    else if(data.laserLeft > 400)
+    if(data.laserLeft > 400)
     {
         delay(175);
         MoveDir(STOP);
         WriteMsg("Left Sensor Action", true);
         arr[arr_size] = LEFT;
         arr_size++; 
+        avaiTurn = true;
     }
 
     //WHILE car is moving
     //Check if car is able to turn RIGHT
-    else if(data.laserRight > 400)
+    if(data.laserRight > 400)
     {
         delay(175);
         MoveDir(STOP);
         WriteMsg("Right Sensor Action", true);
         arr[arr_size] = RIGHT;
         arr_size++;
+        avaiTurn = true;
     } 
 
-    //Car will move FORWARD if nothing is detected
-    arr[arr_size] = FORWARD;
-    arr_size++;
-    printArray();
-    
-    mov = move_decider();
-    Serial.print("MOVE:");
-    printDir(mov);
-
-    if(mov == FORWARD){
+    // front sensor blocks
+    // 4 case : 1 deadend // 2 turn left only // 3 turn right only // 4 turn left or right.
+    //Front laser detect wall that is in 125mm range
+    if(data.laserFront < 125 && (!avaiTurn))
+    {
+      MoveDir(STOP);
+      WriteMsg("Reverse", true);
+      update_orientation(BACK);
+      TurnDeadEnd(LEFT);
+      //After turned, move forward for 500ms then STOP
       MoveDir(FORWARD);
-      Serial.println("MOVE FORWARD");
+      delay(500);
+      MoveDir(STOP);
+      //Scan again, update laser data
+      Scan();
     }
-    else{
+  
+    //WHILE car is moving
+    //Check if car is able to turn LEFT
+
+    if (avaiTurn){
+      if(data.laserFront>400){
+        arr[arr_size] = FORWARD;
+        arr_size++; 
+      }
+
+      mov = move_decider();
+      Serial.print("MOVE:");
+      printDir(mov);
+
       update_orientation(mov);
       TurnIntersection(mov);
       Serial.println("TURNED");
@@ -205,11 +174,16 @@ void loop() {
       MoveDir(FORWARD);
       delay(300);
       MoveDir(STOP);
-
       //Scan again, update laser data
-      Scan();
+      
+
+    }
+    if (!avaiTurn){
+      TurnIntersection(FORWARD);
     }
 
+    printArray();
+    Scan();
     //Check side wall
     CheckSide(LEFT, data.laserLeft);
     CheckSide(RIGHT, data.laserRight);
@@ -364,8 +338,7 @@ void TurnIntersection(int dir)
   }
   
   WriteMsg("Intersection Turn Complete", true);
-//  MoveDir(dir);
-//  delay(50);
+
 }
 
 void MoveDir(int dir)
@@ -503,25 +476,6 @@ bool CheckSide(int side, int dist)
     }
   }
 
-
-//  Scan();
-//  if(data.laserLeft < laserActionThreshold){
-//    while(data.laserLeft < data.laserRight){
-//      MoveDir(STRAFERIGHT);
-//      delay(25);
-//      MoveDir(STOP);
-//      Scan();
-//    }
-//  }
-//
-//  if(data.laserRight < laserActionThreshold){
-//    while(data.laserRight < data.laserLeft){
-//      MoveDir(STRAFELEFT);
-//      delay(25);
-//      MoveDir(STOP);
-//      Scan();
-//    }
-//  } 
 }
 
 void WriteMsg(String msg, bool newLine)
